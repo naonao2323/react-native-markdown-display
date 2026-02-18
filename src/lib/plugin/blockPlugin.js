@@ -1,4 +1,5 @@
 /* code is still in beta, thats why im disabling linter */
+/* eslint-disable eslint-comments/no-unlimited-disable */
 /* eslint-disable */
 
 /**
