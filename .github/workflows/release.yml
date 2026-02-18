@@ -36,6 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -51,7 +52,7 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Publish to npm
-        run: npm publish --provenance
+        run: npm publish
 
   create-github-release:
     name: Create GitHub Release
