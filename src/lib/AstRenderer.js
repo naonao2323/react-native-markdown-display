@@ -1,4 +1,4 @@
-import {StyleSheet} from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import getUniqueID from './util/getUniqueID';
 import convertAdditionalStyles from './util/convertAdditionalStyles';
@@ -29,6 +29,11 @@ export default class AstRenderer {
     this._allowedImageHandlers = allowedImageHandlers;
     this._defaultImageHandler = defaultImageHandler;
     this._debugPrintTree = debugPrintTree;
+
+    this._flattenedStyles = {};
+    Object.keys(style).forEach(key => {
+      this._flattenedStyles[key] = StyleSheet.flatten(style[key]);
+    });
   }
 
   /**
@@ -121,10 +126,10 @@ export default class AstRenderer {
         }
 
         // combine in specific styles for the object
-        if (this._style[parentNodes[a].type]) {
+        if (this._flattenedStyles[parentNodes[a].type]) {
           refStyle = {
             ...refStyle,
-            ...StyleSheet.flatten(this._style[parentNodes[a].type]),
+            ...this._flattenedStyles[parentNodes[a].type],
           };
 
           // workaround for list_items and their content cascading down the tree
@@ -132,9 +137,9 @@ export default class AstRenderer {
             let contentStyle = {};
 
             if (parentNodes[a + 1].type === 'bullet_list') {
-              contentStyle = this._style.bullet_list_content;
+              contentStyle = this._flattenedStyles.bullet_list_content || this._style.bullet_list_content;
             } else if (parentNodes[a + 1].type === 'ordered_list') {
-              contentStyle = this._style.ordered_list_content;
+              contentStyle = this._flattenedStyles.ordered_list_content || this._style.ordered_list_content;
             }
 
             refStyle = {
@@ -185,7 +190,7 @@ export default class AstRenderer {
    * @return {*}
    */
   render = nodes => {
-    const root = {type: 'body', key: getUniqueID(), children: nodes};
+    const root = { type: 'body', key: getUniqueID(), children: nodes };
     return this.renderNode(root, [], true);
   };
 }
