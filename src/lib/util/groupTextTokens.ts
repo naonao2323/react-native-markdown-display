@@ -1,20 +1,21 @@
+import { Token as MarkdownItToken } from 'markdown-it';
 import Token from './Token';
 
-export default function groupTextTokens(tokens) {
-  const result = [];
+export default function groupTextTokens(tokens: MarkdownItToken[]): MarkdownItToken[] {
+  const result: MarkdownItToken[] = [];
 
   let hasGroup = false;
 
-  tokens.forEach((token, index) => {
+  tokens.forEach(token => {
     if (!token.block && !hasGroup) {
       hasGroup = true;
-      result.push(new Token('textgroup', 1));
+      result.push(new Token('textgroup', 1) as any as MarkdownItToken);
       result.push(token);
     } else if (!token.block && hasGroup) {
       result.push(token);
     } else if (token.block && hasGroup) {
       hasGroup = false;
-      result.push(new Token('textgroup', -1));
+      result.push(new Token('textgroup', -1) as any as MarkdownItToken);
       result.push(token);
     } else {
       result.push(token);

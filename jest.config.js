@@ -1,20 +1,29 @@
 module.exports = {
   testEnvironment: 'node',
-  moduleFileExtensions: ['js', 'jsx', 'json'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   testMatch: [
-    '**/__tests__/**/*.js',
-    '**/?(*.)+(spec|test).js'
+    '**/__tests__/**/*.ts?(x)',
+    '**/?(*.)+(spec|test).ts?(x)',
+    '**/__tests__/**/*.js?(x)',
+    '**/?(*.)+(spec|test).js?(x)'
   ],
   transform: {
-    '^.+\\.jsx?$': 'babel-jest',
+    '^.+\\.(ts|tsx)$': ['babel-jest', {
+      presets: [
+        ['@babel/preset-env', { targets: { node: 'current' } }],
+        '@babel/preset-typescript',
+        '@babel/preset-react',
+      ],
+    }],
+    '^.+\\.(js|jsx)$': 'babel-jest',
   },
   transformIgnorePatterns: [
     'node_modules/(?!(react-native|@react-native|react-native-fit-image)/)'
   ],
   collectCoverageFrom: [
-    'src/**/*.{js,jsx}',
-    '!src/**/*.test.{js,jsx}',
-    '!src/**/index.js',
+    'src/**/*.{ts,tsx,js,jsx}',
+    '!src/**/*.test.{ts,tsx,js,jsx}',
+    '!src/**/index.{ts,tsx,js}',
   ],
   coverageThreshold: {
     global: {

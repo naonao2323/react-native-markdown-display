@@ -2,6 +2,21 @@
 /* eslint-disable eslint-comments/no-unlimited-disable */
 /* eslint-disable */
 
+import MarkdownIt from 'markdown-it';
+
+interface BlockPluginOptions {
+  marker?: string;
+  marker_end?: string;
+  validate?: (params: string) => boolean;
+  render?: (
+    tokens: any[],
+    idx: number,
+    options: MarkdownIt.Options,
+    env: unknown,
+    self: any,
+  ) => string;
+}
+
 /**
  * How to use?
  *  new PluginContainer(blockPlugin, '__name_of_block__', {})
@@ -9,39 +24,44 @@
  * @param name
  * @param options
  */
-export default function blockPlugin(md, name, options) {
-  function validateDefault(params) {
-    return params.trim().split(' ', 2)[0] === name;
-  }
-
-  function renderDefault(tokens, idx, _options, env, self) {
-    return self.renderToken(tokens, idx, _options, env, self);
+export default function blockPlugin(
+  md: MarkdownIt,
+  name: string,
+  options?: BlockPluginOptions,
+): void {
+  function renderDefault(
+    tokens: any[],
+    idx: number,
+    _options: MarkdownIt.Options,
+    _env: unknown,
+    self: any,
+  ): string {
+    return self.renderToken(tokens, idx, _options);
   }
 
   options = options || {};
 
-  let min_markers = 1;
-  let marker_str = options.marker || `[${name}]`;
-  let marker_end_str = options.marker_end || `[/${name}]`;
-  let marker_char = marker_str.charCodeAt(0);
-  let marker_len = marker_str.length;
-  let marker_end_len = marker_end_str.length;
+  const min_markers = 1;
+  const marker_str = options.marker || `[${name}]`;
+  const marker_end_str = options.marker_end || `[/${name}]`;
+  const marker_char = marker_str.charCodeAt(0);
+  const marker_len = marker_str.length;
+  const marker_end_len = marker_end_str.length;
 
-  let validate = options.validate || validateDefault;
-  let render = options.render || renderDefault;
+  const render = options.render || renderDefault;
 
-  function container(state, startLine, endLine, silent) {
-    var pos,
-      nextLine,
-      marker_count,
-      markup,
-      params,
-      token,
-      old_parent,
-      old_line_max,
-      auto_closed = false,
-      start = state.bMarks[startLine] + state.tShift[startLine],
-      max = state.eMarks[startLine];
+  function container(state: any, startLine: number, endLine: number, silent: boolean): boolean {
+    let pos: number;
+    let nextLine: number;
+    let marker_count: number;
+    let markup: string;
+    let params: string;
+    let token: any;
+    let old_parent: string;
+    let old_line_max: number;
+    let auto_closed = false;
+    let start = state.bMarks[startLine] + state.tShift[startLine];
+    let max = state.eMarks[startLine];
 
     // Check out the first character quickly,
     // this should filter out most of non-containers

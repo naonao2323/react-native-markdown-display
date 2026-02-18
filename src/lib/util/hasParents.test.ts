@@ -2,8 +2,8 @@ import fc from 'fast-check';
 import hasParents from './hasParents';
 
 describe('hasParents', () => {
-  describe('正常系: 存在する型を検索', () => {
-    it('配列の最初の要素の型を見つけられること', () => {
+  describe('Happy path: searching for existing types', () => {
+    it('should find type of first element in array', () => {
       // Arrange
       const parents = [
         { type: 'paragraph' },
@@ -18,7 +18,7 @@ describe('hasParents', () => {
       expect(result).toBe(true);
     });
 
-    it('配列の中間の要素の型を見つけられること', () => {
+    it('should find type of middle element in array', () => {
       // Arrange
       const parents = [
         { type: 'paragraph' },
@@ -33,7 +33,7 @@ describe('hasParents', () => {
       expect(result).toBe(true);
     });
 
-    it('配列の最後の要素の型を見つけられること', () => {
+    it('should find type of last element in array', () => {
       // Arrange
       const parents = [
         { type: 'paragraph' },
@@ -49,8 +49,8 @@ describe('hasParents', () => {
     });
   });
 
-  describe('正常系: 存在しない型を検索', () => {
-    it('存在しない型の場合、falseを返すこと', () => {
+  describe('Happy path: searching for non-existing types', () => {
+    it('should return false when type does not exist', () => {
       // Arrange
       const parents = [
         { type: 'paragraph' },
@@ -65,8 +65,8 @@ describe('hasParents', () => {
     });
   });
 
-  describe('境界値: 空配列', () => {
-    it('空配列の場合、falseを返すこと', () => {
+  describe('Edge case: empty array', () => {
+    it('should return false for empty array', () => {
       // Arrange
       const parents = [];
       
@@ -78,8 +78,8 @@ describe('hasParents', () => {
     });
   });
 
-  describe('正常系: 追加プロパティを持つオブジェクト', () => {
-    it('type以外のプロパティがあっても正しく検索できること', () => {
+  describe('Happy path: objects with additional properties', () => {
+    it('should correctly search even when objects have properties other than type', () => {
       // Arrange
       const parents = [
         { type: 'paragraph', level: 1, content: 'test' },
@@ -94,8 +94,8 @@ describe('hasParents', () => {
     });
   });
 
-  describe('プロパティベーステスト', () => {
-    it('ランダムな配列でも期待通りの結果を返すこと', () => {
+  describe('Property-based tests', () => {
+    it('should return expected results for random arrays', () => {
       // Property-based test
       const typeArb = fc.constantFrom('paragraph', 'list', 'heading', 'blockquote', 'code');
       
@@ -115,7 +115,7 @@ describe('hasParents', () => {
       );
     });
 
-    it('任意の文字列型でも型エラーが発生しないこと', () => {
+    it('should not cause type errors with arbitrary string types', () => {
       fc.assert(
         fc.property(
           fc.array(fc.record({ type: fc.string() })),

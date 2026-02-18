@@ -1,7 +1,7 @@
-import {Platform} from 'react-native';
+import { Platform, TextStyle, ViewStyle } from 'react-native';
 
 // this is converted to a stylesheet internally at run time with StyleSheet.create(
-export const styles = {
+export const styles: Record<string, TextStyle | ViewStyle> = {
   // The main container
   body: {},
 

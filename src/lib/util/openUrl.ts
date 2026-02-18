@@ -1,6 +1,9 @@
-import {Linking} from 'react-native';
+import { Linking } from 'react-native';
 
-export default function openUrl(url, customCallback) {
+export default function openUrl(
+  url: string,
+  customCallback?: (url: string) => boolean | void,
+): void {
   if (customCallback) {
     const result = customCallback(url);
     if (url && result && typeof result === 'boolean') {
