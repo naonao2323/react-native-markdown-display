@@ -55,6 +55,12 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
+      - name: Publish to npm (force OIDC)
+        run: |
+          unset NODE_AUTH_TOKEN NPM_TOKEN
+          rm -f ~/.npmrc .npmrc || true
+          npm publish --provenance --loglevel verbose
+
       - name: Publish to npm
         run: npm publish
 
