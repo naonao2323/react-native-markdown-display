@@ -1,0 +1,13 @@
+# Default owner for everything in the repo
+* @naonao2323
+
+# GitHub Actions workflows
+/.github/workflows/ @naonao2323
+
+# Documentation
+/doc/ @naonao2323
+README.md @naonao2323
+
+# Package configuration
+package.json @naonao2323
+package-lock.json @naonao2323

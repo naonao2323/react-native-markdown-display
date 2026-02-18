@@ -13,7 +13,7 @@ import hasParents from './util/hasParents';
 
 import textStyleProps from './data/textStyleProps';
 
-const renderRules = (textLimit) => ({
+const renderRules = textLimit => ({
   // when unknown elements are introduced, so it wont break
   unknown: (node, children, parent, styles) => null,
 
@@ -304,7 +304,10 @@ const renderRules = (textLimit) => ({
 
       return (
         <Text key={node.key} style={[inheritedStyles, styles.text]}>
-          {longerThanLimit ? `${node.content.slice(0, textLimit)}...` : node.content} <Text
+          {longerThanLimit
+            ? `${node.content.slice(0, textLimit)}...`
+            : node.content}{' '}
+          <Text
             style={[inheritedStyles, styles.link]}
             onPress={() => openUrl('/seemore', onLinkPress)}>
             See more
