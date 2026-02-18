@@ -23,7 +23,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Run ESLint
-        run: npm run lint
+        uses: ./.github/actions/lint
 
   test:
     name: Test (Node ${{ matrix.node-version }})
@@ -41,7 +41,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Run tests
-        run: npm test
+        uses: ./.github/actions/test
 
   build:
     name: Build (Node ${{ matrix.node-version }})
@@ -58,5 +58,5 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Verify build
-        run: npm run build
+      - name: Typecheck and Build
+        uses: ./.github/actions/typecheck

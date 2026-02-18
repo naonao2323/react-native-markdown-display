@@ -7,8 +7,11 @@ on:
 
 jobs:
   validate:
-    name: Validate
+    name: Validate (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -16,21 +19,24 @@ jobs:
       - name: Setup Node.js and Install
         uses: ./.github/actions/setup
         with:
-          node-version: '22'
+          node-version: ${{ matrix.node-version }}
 
       - name: Run lint
-        run: npm run lint
+        uses: ./.github/actions/lint
 
       - name: Run tests
-        run: npm test
+        uses: ./.github/actions/test
 
-      - name: Verify build
-        run: npm run build
+      - name: Typecheck and Build
+        uses: ./.github/actions/typecheck
 
   publish-npm:
     name: Publish to npm
     needs: validate
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -38,17 +44,21 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
+      - name: Sync version from tag
+        run: npm version ${GITHUB_REF#refs/tags/v} --no-git-tag-version
+
+      - name: Remove .npmrc
+        run: rm -f .npmrc
+
       - name: Publish to npm
         run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   create-github-release:
     name: Create GitHub Release
@@ -78,7 +88,7 @@ jobs:
             
             ### Installation
             ```bash
-            npm install @jeremybarbet/react-native-markdown-display@${{ steps.version.outputs.version }}
+            npm install @naonao2323/react-native-markdown-display@${{ steps.version.outputs.version }}
             ```
           draft: false
           prerelease: false

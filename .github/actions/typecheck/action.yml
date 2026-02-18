@@ -1,0 +1,13 @@
+name: 'Typecheck and Build'
+description: 'Run TypeScript type check and build'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run typecheck
+      run: npm run typecheck
+      shell: bash
+
+    - name: Run build
+      run: npm run build
+      shell: bash

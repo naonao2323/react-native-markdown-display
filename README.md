@@ -10,12 +10,13 @@ This is intended to be a replacement for react-native-markdown-renderer, with a 
 
 #### Yarn
 ```npm
-yarn add react-native-markdown-display
+yarn add @naonao2323/react-native-markdown-display
 ```
 
 #### NPM
 ```npm
-npm install -S react-native-markdown-display
+npm i @naonao2323/react-native-markdown-display
+
 ```
 
 ### Get Started
