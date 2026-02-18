@@ -3,8 +3,8 @@
  * @author Mient-jan Stelling + contributors
  */
 
-import React, {useMemo} from 'react';
-import {Text, StyleSheet} from 'react-native';
+import React, { useMemo } from 'react';
+import { Text, StyleSheet } from 'react-native';
 import PropTypes from 'prop-types';
 import parser from './lib/parser';
 import getUniqueID from './lib/util/getUniqueID';
@@ -17,8 +17,8 @@ import MarkdownIt from 'markdown-it';
 import PluginContainer from './lib/plugin/PluginContainer';
 import blockPlugin from './lib/plugin/blockPlugin';
 import removeTextStyleProps from './lib/util/removeTextStyleProps';
-import {styles} from './lib/styles';
-import {stringToTokens} from './lib/util/stringToTokens';
+import { styles } from './lib/styles';
+import { stringToTokens } from './lib/util/stringToTokens';
 
 export {
   getUniqueID,
@@ -227,7 +227,7 @@ Markdown.propTypes = {
     } else if (invalidProps.length > 0) {
       return new Error(
         `Invalid prop \`${propName}\` supplied to \`${componentName}\`. These ` +
-          `props are not of type function \`${invalidProps.join(', ')}\` `,
+        `props are not of type function \`${invalidProps.join(', ')}\` `,
       );
     }
   },
