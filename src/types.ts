@@ -1,6 +1,8 @@
 import MarkdownIt, { Token } from 'markdown-it';
 import { ReactNode } from 'react';
-import { StyleProp, TextStyle, ViewStyle } from 'react-native';
+import { ImageStyle, StyleProp, TextStyle, ViewStyle } from 'react-native';
+
+export type CombinedStyle = TextStyle | ViewStyle | ImageStyle;
 
 export interface ASTNode {
   type: string;
@@ -17,15 +19,15 @@ export interface ASTNode {
   markup?: string;
 }
 
-export interface RenderFunction {
-  (
-    node: ASTNode,
-    children: ReactNode,
-    parent: ASTNode[],
-    styles: StylesType,
-    ...additionalArgs: unknown[]
-  ): ReactNode;
-}
+// Flexible render function type that supports various argument combinations
+export type RenderFunction = (
+  node: ASTNode,
+  children: ReactNode,
+  parent: ASTNode[],
+  styles: StylesType,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ...additionalArgs: any[]
+) => ReactNode;
 
 export interface RenderRules {
   [key: string]: RenderFunction;
@@ -38,7 +40,7 @@ export interface MarkdownParser {
 export type MarkdownItType = MarkdownIt;
 
 export interface StylesType {
-  [key: string]: StyleProp<TextStyle | ViewStyle>;
+  [key: string]: StyleProp<CombinedStyle>;
 }
 
 export interface MarkdownProps {

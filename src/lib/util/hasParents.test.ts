@@ -124,7 +124,7 @@ describe('hasParents', () => {
             try {
               const result = hasParents(parents, searchType);
               return typeof result === 'boolean';
-            } catch (e) {
+            } catch {
               return false;
             }
           }

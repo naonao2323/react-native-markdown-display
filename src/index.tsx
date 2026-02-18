@@ -164,7 +164,7 @@ const Markdown = React.memo<MarkdownProps>(
     debugPrintTree = false,
     textLimit = undefined,
   }) => {
-    const momoizedRenderer = useMemo(
+    const memoizedRenderer = useMemo(
       () =>
         getRenderer(
           renderer,
@@ -201,10 +201,12 @@ const Markdown = React.memo<MarkdownProps>(
 
     return parser(
       children,
-      momoizedRenderer.render,
+      memoizedRenderer.render,
       markdownParser,
     );
   },
 );
+
+Markdown.displayName = 'Markdown';
 
 export default Markdown;

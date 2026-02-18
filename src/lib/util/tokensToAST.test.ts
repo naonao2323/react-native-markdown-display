@@ -96,7 +96,7 @@ describe('tokensToAST', () => {
           try {
             const result = tokensToAST(tokens);
             return Array.isArray(result);
-          } catch (e) {
+          } catch {
             // Some token combinations may not be valid, that's ok
             return true;
           }
