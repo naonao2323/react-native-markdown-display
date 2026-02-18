@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import {
   Text,
   TouchableWithoutFeedback,
   View,
   Platform,
   StyleSheet,
+  TextStyle,
 } from 'react-native';
 import FitImage from 'react-native-fit-image';
 
@@ -12,86 +13,87 @@ import openUrl from './util/openUrl';
 import hasParents from './util/hasParents';
 
 import textStyleProps from './data/textStyleProps';
+import { RenderRules, ASTNode, StylesType } from '../types';
 
-const renderRules = textLimit => ({
+const renderRules = (textLimit?: number): RenderRules => ({
   // when unknown elements are introduced, so it wont break
-  unknown: (node, children, parent, styles) => null,
+  unknown: (_node, _children, _parent, _styles) => null,
 
   // The main container
-  body: (node, children, parent, styles) => (
+  body: (node, children, _parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_body}>
       {children}
     </View>
   ),
 
   // Headings
-  heading1: (node, children, parent, styles) => (
+  heading1: (node, children, _parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_heading1}>
       {children}
     </View>
   ),
-  heading2: (node, children, parent, styles) => (
+  heading2: (node, children, _parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_heading2}>
       {children}
     </View>
   ),
-  heading3: (node, children, parent, styles) => (
+  heading3: (node, children, _parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_heading3}>
       {children}
     </View>
   ),
-  heading4: (node, children, parent, styles) => (
+  heading4: (node, children, _parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_heading4}>
       {children}
     </View>
   ),
-  heading5: (node, children, parent, styles) => (
+  heading5: (node, children, _parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_heading5}>
       {children}
     </View>
   ),
-  heading6: (node, children, parent, styles) => (
+  heading6: (node, children, _parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_heading6}>
       {children}
     </View>
   ),
 
   // Horizontal Rule
-  hr: (node, children, parent, styles) => (
+  hr: (node, _children, _parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_hr} />
   ),
 
   // Emphasis
-  strong: (node, children, parent, styles) => (
+  strong: (node, children, _parent, styles) => (
     <Text key={node.key} style={styles.strong}>
       {children}
     </Text>
   ),
-  em: (node, children, parent, styles) => (
+  em: (node, children, _parent, styles) => (
     <Text key={node.key} style={styles.em}>
       {children}
     </Text>
   ),
-  s: (node, children, parent, styles) => (
+  s: (node, children, _parent, styles) => (
     <Text key={node.key} style={styles.s}>
       {children}
     </Text>
   ),
 
   // Blockquotes
-  blockquote: (node, children, parent, styles) => (
+  blockquote: (node, children, _parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_blockquote}>
       {children}
     </View>
   ),
 
   // Lists
-  bullet_list: (node, children, parent, styles) => (
+  bullet_list: (node, children, _parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_bullet_list}>
       {children}
     </View>
   ),
-  ordered_list: (node, children, parent, styles) => (
+  ordered_list: (node, children, _parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_ordered_list}>
       {children}
     </View>
@@ -100,7 +102,7 @@ const renderRules = textLimit => ({
   // child items that can be styled (the list icon and the list content)
   // outside of the AST tree so there are some work arounds in the
   // AST renderer specifically to get the styling right here
-  list_item: (node, children, parent, styles, inheritedStyles = {}) => {
+  list_item: ((node: ASTNode, children: ReactNode, parent: ASTNode[], styles: StylesType, inheritedStyles: TextStyle = {}) => {
     // we need to grab any text specific stuff here that is applied on the list_item style
     // and apply it onto bullet_list_icon. the AST renderer has some workaround code to make
     // the content classes apply correctly to the child AST tree items as well
@@ -112,11 +114,12 @@ const renderRules = textLimit => ({
 
     const arr = Object.keys(refStyle);
 
-    const modifiedInheritedStylesObj = {};
+    const modifiedInheritedStylesObj: TextStyle = {};
 
     for (let b = 0; b < arr.length; b++) {
-      if (textStyleProps.includes(arr[b])) {
-        modifiedInheritedStylesObj[arr[b]] = refStyle[arr[b]];
+      const key = arr[b];
+      if (key && textStyleProps.includes(key)) {
+        (modifiedInheritedStylesObj as Record<string, unknown>)[key] = (refStyle as Record<string, unknown>)[key];
       }
     }
 
@@ -137,14 +140,14 @@ const renderRules = textLimit => ({
 
     if (hasParents(parent, 'ordered_list')) {
       const orderedListIndex = parent.findIndex(
-        el => el.type === 'ordered_list',
+        (el: ASTNode) => el.type === 'ordered_list',
       );
 
       const orderedList = parent[orderedListIndex];
       let listItemNumber;
 
-      if (orderedList.attributes && orderedList.attributes.start) {
-        listItemNumber = orderedList.attributes.start + node.index;
+      if (orderedList && orderedList.attributes && orderedList.attributes.start) {
+        listItemNumber = (orderedList.attributes.start as number) + node.index;
       } else {
         listItemNumber = node.index + 1;
       }
@@ -166,15 +169,15 @@ const renderRules = textLimit => ({
         {children}
       </View>
     );
-  },
+  }) as any, // RenderFunction signature allows variadic args - cast needed for different arg counts
 
   // Code
-  code_inline: (node, children, parent, styles, inheritedStyles = {}) => (
+  code_inline: ((node: ASTNode, _children: ReactNode, _parent: ASTNode[], styles: StylesType, inheritedStyles: TextStyle = {}) => (
     <Text key={node.key} style={[inheritedStyles, styles.code_inline]}>
       {node.content}
     </Text>
-  ),
-  code_block: (node, children, parent, styles, inheritedStyles = {}) => {
+  )) as any, // RenderFunction signature allows variadic args
+  code_block: ((node: ASTNode, _children: ReactNode, _parent: ASTNode[], styles: StylesType, inheritedStyles: TextStyle = {}) => {
     // we trim new lines off the end of code blocks because the parser sends an extra one.
     let {content} = node;
 
@@ -190,8 +193,8 @@ const renderRules = textLimit => ({
         {content}
       </Text>
     );
-  },
-  fence: (node, children, parent, styles, inheritedStyles = {}) => {
+  }) as any, // RenderFunction signature allows variadic args
+  fence: ((node: ASTNode, _children: ReactNode, _parent: ASTNode[], styles: StylesType, inheritedStyles: TextStyle = {}) => {
     // we trim new lines off the end of code blocks because the parser sends an extra one.
     let {content} = node;
 
@@ -207,74 +210,74 @@ const renderRules = textLimit => ({
         {content}
       </Text>
     );
-  },
+  }) as any, // RenderFunction signature allows variadic args
 
   // Tables
-  table: (node, children, parent, styles) => (
+  table: (node, children, _parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_table}>
       {children}
     </View>
   ),
-  thead: (node, children, parent, styles) => (
+  thead: (node, children, _parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_thead}>
       {children}
     </View>
   ),
-  tbody: (node, children, parent, styles) => (
+  tbody: (node, children, _parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_tbody}>
       {children}
     </View>
   ),
-  th: (node, children, parent, styles) => (
+  th: (node, children, _parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_th}>
       {children}
     </View>
   ),
-  tr: (node, children, parent, styles) => (
+  tr: (node, children, _parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_tr}>
       {children}
     </View>
   ),
-  td: (node, children, parent, styles) => (
+  td: (node, children, _parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_td}>
       {children}
     </View>
   ),
 
   // Links
-  link: (node, children, parent, styles, onLinkPress) => (
+  link: ((node: ASTNode, children: ReactNode, _parent: ASTNode[], styles: StylesType, onLinkPress?: (url: string) => boolean | void) => (
     <Text
       key={node.key}
       style={styles.link}
-      onPress={() => openUrl(node.attributes.href, onLinkPress)}>
+      onPress={() => openUrl(node.attributes.href as string, onLinkPress)}>
       {children}
     </Text>
-  ),
-  blocklink: (node, children, parent, styles, onLinkPress) => (
+  )) as any, // RenderFunction signature allows variadic args
+  blocklink: ((node: ASTNode, children: ReactNode, _parent: ASTNode[], styles: StylesType, onLinkPress?: (url: string) => boolean | void) => (
     <TouchableWithoutFeedback
       key={node.key}
-      onPress={() => openUrl(node.attributes.href, onLinkPress)}
+      onPress={() => openUrl(node.attributes.href as string, onLinkPress)}
       style={styles.blocklink}>
       <View style={styles.image}>{children}</View>
     </TouchableWithoutFeedback>
-  ),
+  )) as any, // RenderFunction signature allows variadic args
 
   // Images
-  image: (
-    node,
-    children,
-    parent,
-    styles,
-    allowedImageHandlers,
-    defaultImageHandler,
+  image: ((
+    node: ASTNode,
+    _children: ReactNode,
+    _parent: ASTNode[],
+    styles: StylesType,
+    allowedImageHandlers?: string[],
+    defaultImageHandler?: string | null,
   ) => {
-    const {src, alt} = node.attributes;
+    const { src, alt } = node.attributes as { src?: string; alt?: string };
 
     // we check that the source starts with at least one of the elements in allowedImageHandlers
     const show =
-      allowedImageHandlers.filter(value => {
-        return src.toLowerCase().startsWith(value.toLowerCase());
-      }).length > 0;
+      allowedImageHandlers?.filter(value => {
+        return src?.toLowerCase().startsWith(value.toLowerCase());
+      }).length ?? 0 > 0;
 
     if (show === false && defaultImageHandler === null) {
       return null;
@@ -283,22 +286,18 @@ const renderRules = textLimit => ({
     const imageProps = {
       indicator: true,
       key: node.key,
-      style: styles._VIEW_SAFE_image,
+      style: styles._VIEW_SAFE_image as any, // FitImage expects ImageStyle but we provide ViewStyle
       source: {
-        uri: show === true ? src : `${defaultImageHandler}${src}`,
+        uri: show === true ? (src || '') : `${defaultImageHandler}${src || ''}`,
       },
+      ...(alt ? { accessible: true, accessibilityLabel: alt } : {}),
     };
 
-    if (alt) {
-      imageProps.accessible = true;
-      imageProps.accessibilityLabel = alt;
-    }
-
     return <FitImage {...imageProps} />;
-  },
+  }) as any, // RenderFunction signature allows variadic args
 
   // Text Output
-  text: (node, children, parent, styles, inheritedStyles = {}, onLinkPress) => {
+  text: ((node: ASTNode, _children: ReactNode, _parent: ASTNode[], styles: StylesType, inheritedStyles: TextStyle = {}, onLinkPress?: (url: string) => boolean | void) => {
     if (textLimit) {
       const longerThanLimit = node.content.length >= textLimit;
 
@@ -321,40 +320,40 @@ const renderRules = textLimit => ({
         {node.content}
       </Text>
     );
-  },
-  textgroup: (node, children, parent, styles) => (
+  }) as any, // RenderFunction signature allows variadic args
+  textgroup: (node, children, _parent, styles) => (
     <Text key={node.key} style={styles.textgroup}>
       {children}
     </Text>
   ),
-  paragraph: (node, children, parent, styles) => (
+  paragraph: (node, children, _parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_paragraph}>
       {children}
     </View>
   ),
-  hardbreak: (node, children, parent, styles) => (
+  hardbreak: (node, _children, _parent, styles) => (
     <Text key={node.key} style={styles.hardbreak}>
       {'\n'}
     </Text>
   ),
-  softbreak: (node, children, parent, styles) => (
+  softbreak: (node, _children, _parent, styles) => (
     <Text key={node.key} style={styles.softbreak}>
       {'\n'}
     </Text>
   ),
 
   // Believe these are never used but retained for completeness
-  pre: (node, children, parent, styles) => (
+  pre: (node, children, _parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_pre}>
       {children}
     </View>
   ),
-  inline: (node, children, parent, styles) => (
+  inline: (node, children, _parent, styles) => (
     <Text key={node.key} style={styles.inline}>
       {children}
     </Text>
   ),
-  span: (node, children, parent, styles) => (
+  span: (node, children, _parent, styles) => (
     <Text key={node.key} style={styles.span}>
       {children}
     </Text>

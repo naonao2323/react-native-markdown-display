@@ -1,10 +1,11 @@
+import { Token } from 'markdown-it';
 import getTokenTypeByToken from './getTokenTypeByToken';
 import flattenInlineTokens from './flattenInlineTokens';
 import renderInlineAsText from './renderInlineAsText';
 
-export function cleanupTokens(tokens) {
-  tokens = flattenInlineTokens(tokens);
-  tokens.forEach(token => {
+export function cleanupTokens(tokens: Token[]): Token[] {
+  let cleanedTokens = flattenInlineTokens(tokens);
+  cleanedTokens.forEach(token => {
     token.type = getTokenTypeByToken(token);
 
     // set image and hardbreak to block elements
@@ -13,19 +14,20 @@ export function cleanupTokens(tokens) {
     }
 
     // Set img alt text
-    if (token.type === 'image') {
-      token.attrs[token.attrIndex('alt')][1] = renderInlineAsText(
-        token.children,
-      );
+    if (token.type === 'image' && token.children) {
+      const altIndex = token.attrIndex('alt');
+      if (altIndex >= 0 && token.attrs && token.attrs[altIndex]) {
+        token.attrs[altIndex][1] = renderInlineAsText(token.children);
+      }
     }
-  });
+  })
 
   /**
    * changing a link token to a blocklink to fix issue where link tokens with
    * nested non text tokens breaks component
    */
-  const stack = [];
-  tokens = tokens.reduce((acc, token, index) => {
+  const stack: Token[] = [];
+  cleanedTokens = cleanedTokens.reduce((acc: Token[], token) => {
     if (token.type === 'link' && token.nesting === 1) {
       stack.push(token);
     } else if (
@@ -34,8 +36,11 @@ export function cleanupTokens(tokens) {
       token.nesting === -1
     ) {
       if (stack.some(stackToken => stackToken.block)) {
-        stack[0].type = 'blocklink';
-        stack[0].block = true;
+        const firstToken = stack[0];
+        if (firstToken) {
+          firstToken.type = 'blocklink';
+          firstToken.block = true;
+        }
         token.type = 'blocklink';
         token.block = true;
       }
@@ -43,7 +48,8 @@ export function cleanupTokens(tokens) {
       stack.push(token);
 
       while (stack.length) {
-        acc.push(stack.shift());
+        const shifted = stack.shift();
+        if (shifted) acc.push(shifted);
       }
     } else if (stack.length > 0) {
       stack.push(token);
@@ -54,5 +60,5 @@ export function cleanupTokens(tokens) {
     return acc;
   }, []);
 
-  return tokens;
+  return cleanedTokens;
 }

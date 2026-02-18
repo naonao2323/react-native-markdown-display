@@ -1,25 +1,31 @@
-import {StyleSheet} from 'react-native';
+import { ReactNode } from 'react';
+import { StyleSheet, TextStyle } from 'react-native';
 
 import getUniqueID from './util/getUniqueID';
 import convertAdditionalStyles from './util/convertAdditionalStyles';
 
 import textStyleProps from './data/textStyleProps';
+import { ASTNode, RenderRules, StylesType, RenderFunction } from '../types';
 
 export default class AstRenderer {
-  /**
-   *
-   * @param {Object.<string, function>} renderRules
-   * @param {any} style
-   */
+  private _renderRules: RenderRules;
+  private _style: StylesType;
+  private _onLinkPress?: (url: string) => boolean | void;
+  private _maxTopLevelChildren?: number | null;
+  private _topLevelMaxExceededItem?: ReactNode;
+  private _allowedImageHandlers?: string[];
+  private _defaultImageHandler?: string;
+  private _debugPrintTree?: boolean;
+
   constructor(
-    renderRules,
-    style,
-    onLinkPress,
-    maxTopLevelChildren,
-    topLevelMaxExceededItem,
-    allowedImageHandlers,
-    defaultImageHandler,
-    debugPrintTree,
+    renderRules: RenderRules,
+    style: StylesType,
+    onLinkPress?: (url: string) => boolean | void,
+    maxTopLevelChildren?: number | null,
+    topLevelMaxExceededItem?: ReactNode,
+    allowedImageHandlers?: string[],
+    defaultImageHandler?: string,
+    debugPrintTree?: boolean,
   ) {
     this._renderRules = renderRules;
     this._style = style;
@@ -31,12 +37,7 @@ export default class AstRenderer {
     this._debugPrintTree = debugPrintTree;
   }
 
-  /**
-   *
-   * @param {string} type
-   * @return {string}
-   */
-  getRenderFunction = type => {
+  getRenderFunction = (type: string): RenderFunction => {
     const renderFunction = this._renderRules[type];
 
     if (!renderFunction) {
@@ -48,15 +49,10 @@ export default class AstRenderer {
     return renderFunction;
   };
 
-  /**
-   *
-   * @param node
-   * @param parentNodes
-   * @return {*}
-   */
-  renderNode = (node, parentNodes, isRoot = false) => {
+  renderNode = (node: ASTNode, parentNodes: readonly ASTNode[], _isRoot = false): ReactNode => {
     const renderFunction = this.getRenderFunction(node.type);
     const parents = [...parentNodes];
+    const parentNodesArray = parentNodes as ASTNode[];
 
     if (this._debugPrintTree === true) {
       let str = '';
@@ -71,7 +67,7 @@ export default class AstRenderer {
     parents.unshift(node);
 
     // calculate the children first
-    let children = node.children.map(value => {
+    const children = node.children.map((value: ASTNode) => {
       return this.renderNode(value, parents);
     });
 
@@ -81,7 +77,7 @@ export default class AstRenderer {
       return renderFunction(
         node,
         children,
-        parentNodes,
+        parentNodes as ASTNode[],
         this._style,
         this._onLinkPress,
       );
@@ -91,7 +87,7 @@ export default class AstRenderer {
       return renderFunction(
         node,
         children,
-        parentNodes,
+        parentNodes as ASTNode[],
         this._style,
         this._allowedImageHandlers,
         this._defaultImageHandler,
@@ -106,40 +102,43 @@ export default class AstRenderer {
     // we have to handle list_item seperately here because they have some child
     // pseudo classes that need the additional style props from parents passed down to them
     if (children.length === 0 || node.type === 'list_item') {
-      const styleObj = {};
+      const styleObj: TextStyle = {};
 
-      for (let a = parentNodes.length - 1; a > -1; a--) {
+      for (let a = parentNodesArray.length - 1; a > -1; a--) {
         // grab and additional attributes specified by markdown-it
-        let refStyle = {};
+        let refStyle: Record<string, unknown> = {};
 
+        const nodeAttrs = parentNodesArray[a]?.attributes;
         if (
-          parentNodes[a].attributes &&
-          parentNodes[a].attributes.style &&
-          typeof parentNodes[a].attributes.style === 'string'
+          nodeAttrs &&
+          nodeAttrs.style &&
+          typeof nodeAttrs.style === 'string'
         ) {
-          refStyle = convertAdditionalStyles(parentNodes[a].attributes.style);
+          refStyle = convertAdditionalStyles(nodeAttrs.style) as Record<string, unknown>;
         }
 
         // combine in specific styles for the object
-        if (this._style[parentNodes[a].type]) {
+        const nodeType = parentNodesArray[a]?.type ?? '';
+        if (nodeType && this._style[nodeType]) {
+          const flattenedStyle = StyleSheet.flatten(this._style[nodeType]) as Record<string, unknown>;
           refStyle = {
             ...refStyle,
-            ...StyleSheet.flatten(this._style[parentNodes[a].type]),
+            ...flattenedStyle,
           };
 
           // workaround for list_items and their content cascading down the tree
-          if (parentNodes[a].type === 'list_item') {
-            let contentStyle = {};
+          if (parentNodesArray[a]?.type === 'list_item') {
+            let contentStyle: Record<string, unknown> = {};
 
-            if (parentNodes[a + 1].type === 'bullet_list') {
-              contentStyle = this._style.bullet_list_content;
-            } else if (parentNodes[a + 1].type === 'ordered_list') {
-              contentStyle = this._style.ordered_list_content;
+            if (parentNodesArray[a + 1]?.type === 'bullet_list') {
+              contentStyle = (StyleSheet.flatten(this._style.bullet_list_content) as Record<string, unknown>) || {};
+            } else if (parentNodesArray[a + 1]?.type === 'ordered_list') {
+              contentStyle = (StyleSheet.flatten(this._style.ordered_list_content) as Record<string, unknown>) || {};
             }
 
             refStyle = {
               ...refStyle,
-              ...StyleSheet.flatten(contentStyle),
+              ...contentStyle,
             };
           }
         }
@@ -148,8 +147,9 @@ export default class AstRenderer {
         const arr = Object.keys(refStyle);
 
         for (let b = 0; b < arr.length; b++) {
-          if (textStyleProps.includes(arr[b])) {
-            styleObj[arr[b]] = refStyle[arr[b]];
+          const key = arr[b];
+          if (key && textStyleProps.includes(key)) {
+            (styleObj as Record<string, unknown>)[key] = refStyle[key];
           }
         }
       }
@@ -157,7 +157,7 @@ export default class AstRenderer {
       return renderFunction(
         node,
         children,
-        parentNodes,
+        parentNodesArray,
         this._style,
         styleObj,
         node.type === 'text' ? this._onLinkPress : undefined,
@@ -166,26 +166,31 @@ export default class AstRenderer {
 
     // cull top level children
 
+    let finalChildren = children;
     if (
       this._maxTopLevelChildren &&
       children.length > this._maxTopLevelChildren
     ) {
-      children = children.slice(0, this._maxTopLevelChildren);
-      children.push(this._topLevelMaxExceededItem);
+      finalChildren = children.slice(0, this._maxTopLevelChildren);
+      finalChildren.push(this._topLevelMaxExceededItem);
     }
 
     // render anythign else that has a normal signature
 
-    return renderFunction(node, children, parentNodes, this._style);
+    return renderFunction(node, finalChildren, parentNodesArray, this._style);
   };
 
-  /**
-   *
-   * @param nodes
-   * @return {*}
-   */
-  render = nodes => {
-    const root = {type: 'body', key: getUniqueID(), children: nodes};
+  render = (nodes: readonly ASTNode[]): ReactNode => {
+    const root: ASTNode = {
+      type: 'body',
+      sourceType: 'body',
+      key: getUniqueID(),
+      content: '',
+      tokenIndex: -1,
+      index: -1,
+      attributes: {},
+      children: nodes as ASTNode[],
+    };
     return this.renderNode(root, [], true);
   };
 }

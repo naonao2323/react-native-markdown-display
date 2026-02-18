@@ -1,4 +1,4 @@
-export default [
+const textStyleProps: readonly string[] = [
   'textShadowOffset',
   'color',
   'fontSize',
@@ -19,3 +19,5 @@ export default [
   'textTransform',
   'writingDirection',
 ];
+
+export default textStyleProps;

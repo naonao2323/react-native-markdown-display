@@ -3,9 +3,8 @@
  * @author Mient-jan Stelling + contributors
  */
 
-import React, {useMemo} from 'react';
-import {Text, StyleSheet} from 'react-native';
-import PropTypes from 'prop-types';
+import React, { useMemo, ReactNode } from 'react';
+import { Text, StyleSheet } from 'react-native';
 import parser from './lib/parser';
 import getUniqueID from './lib/util/getUniqueID';
 import hasParents from './lib/util/hasParents';
@@ -17,8 +16,9 @@ import MarkdownIt from 'markdown-it';
 import PluginContainer from './lib/plugin/PluginContainer';
 import blockPlugin from './lib/plugin/blockPlugin';
 import removeTextStyleProps from './lib/util/removeTextStyleProps';
-import {styles} from './lib/styles';
-import {stringToTokens} from './lib/util/stringToTokens';
+import { styles } from './lib/styles';
+import { stringToTokens } from './lib/util/stringToTokens';
+import { ASTNode, MarkdownProps, RenderRules, StylesType } from './types';
 
 export {
   getUniqueID,
@@ -38,8 +38,8 @@ export {
 
 // we use StyleSheet.flatten here to make sure we have an object, in case someone
 // passes in a StyleSheet.create result to the style prop
-const getStyle = (mergeStyle, style) => {
-  let useStyles = {};
+const getStyle = (mergeStyle: boolean, style: StylesType | null): StylesType => {
+  let useStyles: StylesType = {};
 
   if (mergeStyle === true && style) {
     Object.keys(styles).forEach(value => {
@@ -63,25 +63,30 @@ const getStyle = (mergeStyle, style) => {
   }
 
   Object.keys(useStyles).forEach(value => {
-    useStyles['_VIEW_SAFE_' + value] = removeTextStyleProps(useStyles[value]);
+    const styleValue = StyleSheet.flatten(useStyles[value]);
+    useStyles['_VIEW_SAFE_' + value] = removeTextStyleProps(styleValue || {});
   });
 
-  return StyleSheet.create(useStyles);
+  return StyleSheet.create(useStyles as any) as StylesType; // StyleSheet.create doesn't preserve custom style keys
+};
+
+type RendererLike = {
+  render: (nodes: readonly ASTNode[]) => ReactNode;
 };
 
 const getRenderer = (
-  renderer,
-  rules,
-  style,
-  mergeStyle,
-  onLinkPress,
-  maxTopLevelChildren,
-  topLevelMaxExceededItem,
-  allowedImageHandlers,
-  defaultImageHandler,
-  debugPrintTree,
-  textLimit,
-) => {
+  renderer: AstRenderer | ((nodes: readonly ASTNode[]) => ReactNode) | null,
+  rules: RenderRules | null,
+  style: StylesType | null,
+  mergeStyle: boolean,
+  onLinkPress?: (url: string) => boolean | void,
+  maxTopLevelChildren?: number | null,
+  topLevelMaxExceededItem?: ReactNode,
+  allowedImageHandlers?: string[],
+  defaultImageHandler?: string,
+  debugPrintTree?: boolean,
+  textLimit?: number,
+): RendererLike => {
   if (renderer && rules) {
     console.warn(
       'react-native-markdown-display you are using renderer and rules at the same time. This is not possible, props.rules is ignored',
@@ -96,44 +101,45 @@ const getRenderer = (
 
   // these checks are here to prevent extra overhead.
   if (renderer) {
-    if (!(typeof renderer === 'function') || renderer instanceof AstRenderer) {
+    if (renderer instanceof AstRenderer) {
       return renderer;
-    } else {
-      throw new Error(
-        'Provided renderer is not compatible with function or AstRenderer. please change',
-      );
     }
-  } else {
-    let useStyles = getStyle(mergeStyle, style);
-
-    return new AstRenderer(
-      {
-        ...renderRules(textLimit),
-        ...(rules || {}),
-      },
-      useStyles,
-      onLinkPress,
-      maxTopLevelChildren,
-      topLevelMaxExceededItem,
-      allowedImageHandlers,
-      defaultImageHandler,
-      debugPrintTree,
-    );
+    return { render: renderer };
   }
+  
+  const useStyles = getStyle(mergeStyle, style);
+
+  return new AstRenderer(
+    {
+      ...renderRules(textLimit),
+      ...(rules || {}),
+    },
+    useStyles,
+    onLinkPress,
+    maxTopLevelChildren,
+    topLevelMaxExceededItem,
+    allowedImageHandlers,
+    defaultImageHandler,
+    debugPrintTree,
+  );
 };
 
-const getMarkdownParser = (markdownit, plugins) => {
+const getMarkdownParser = (
+  markdownit: MarkdownIt,
+  plugins?: Array<PluginContainer<unknown>>,
+): MarkdownIt => {
   let md = markdownit;
   if (plugins && plugins.length > 0) {
     plugins.forEach(plugin => {
-      md = md.use.apply(md, plugin.toArray());
+      const [fn, ...args] = plugin.toArray();
+      md = md.use(fn as any, ...args);
     });
   }
 
   return md;
 };
 
-const Markdown = React.memo(
+const Markdown = React.memo<MarkdownProps>(
   ({
     children,
     renderer = null,
@@ -193,51 +199,12 @@ const Markdown = React.memo(
       [markdownit, plugins],
     );
 
-    return parser(children, momoizedRenderer.render, markdownParser);
+    return parser(
+      children,
+      momoizedRenderer.render,
+      markdownParser,
+    );
   },
 );
-
-Markdown.propTypes = {
-  children: PropTypes.node.isRequired,
-  renderer: PropTypes.oneOfType([
-    PropTypes.func,
-    PropTypes.instanceOf(AstRenderer),
-  ]),
-  onLinkPress: PropTypes.func,
-  maxTopLevelChildren: PropTypes.number,
-  topLevelMaxExceededItem: PropTypes.any,
-  rules: (props, propName, componentName) => {
-    let invalidProps = [];
-    const prop = props[propName];
-
-    if (!prop) {
-      return;
-    }
-
-    if (typeof prop === 'object') {
-      invalidProps = Object.keys(prop).filter(
-        key => typeof prop[key] !== 'function',
-      );
-    }
-
-    if (typeof prop !== 'object') {
-      return new Error(
-        `Invalid prop \`${propName}\` supplied to \`${componentName}\`. Must be of shape {[index:string]:function} `,
-      );
-    } else if (invalidProps.length > 0) {
-      return new Error(
-        `Invalid prop \`${propName}\` supplied to \`${componentName}\`. These ` +
-          `props are not of type function \`${invalidProps.join(', ')}\` `,
-      );
-    }
-  },
-  markdownit: PropTypes.instanceOf(MarkdownIt),
-  plugins: PropTypes.arrayOf(PropTypes.instanceOf(PluginContainer)),
-  style: PropTypes.any,
-  mergeStyle: PropTypes.bool,
-  allowedImageHandlers: PropTypes.arrayOf(PropTypes.string),
-  defaultImageHandler: PropTypes.string,
-  debugPrintTree: PropTypes.bool,
-};
 
 export default Markdown;

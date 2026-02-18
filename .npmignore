@@ -3,3 +3,29 @@
 /bin
 /docs
 /doc
+
+# Source files (only ship dist/)
+/src
+
+# Test files
+**/*.test.ts
+**/*.test.tsx
+**/*.test.js
+__mocks__
+
+# Config files
+tsconfig.json
+jest.config.js
+jest.setup.js
+.eslintrc.js
+.eslintcache
+.babelrc
+.prettierrc.js
+
+# CI/CD
+/.github
+
+# Development
+node_modules
+.DS_Store
+*.log
