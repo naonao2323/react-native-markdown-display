@@ -169,14 +169,14 @@ const renderRules = (textLimit?: number): RenderRules => ({
         {children}
       </View>
     );
-  }) as any,
+  }) as any, // RenderFunction signature allows variadic args - cast needed for different arg counts
 
   // Code
   code_inline: ((node: ASTNode, _children: ReactNode, _parent: ASTNode[], styles: StylesType, inheritedStyles: TextStyle = {}) => (
     <Text key={node.key} style={[inheritedStyles, styles.code_inline]}>
       {node.content}
     </Text>
-  )) as any,
+  )) as any, // RenderFunction signature allows variadic args
   code_block: ((node: ASTNode, _children: ReactNode, _parent: ASTNode[], styles: StylesType, inheritedStyles: TextStyle = {}) => {
     // we trim new lines off the end of code blocks because the parser sends an extra one.
     let {content} = node;
@@ -193,7 +193,7 @@ const renderRules = (textLimit?: number): RenderRules => ({
         {content}
       </Text>
     );
-  }) as any,
+  }) as any, // RenderFunction signature allows variadic args
   fence: ((node: ASTNode, _children: ReactNode, _parent: ASTNode[], styles: StylesType, inheritedStyles: TextStyle = {}) => {
     // we trim new lines off the end of code blocks because the parser sends an extra one.
     let {content} = node;
@@ -210,7 +210,7 @@ const renderRules = (textLimit?: number): RenderRules => ({
         {content}
       </Text>
     );
-  }) as any,
+  }) as any, // RenderFunction signature allows variadic args
 
   // Tables
   table: (node, children, _parent, styles) => (
@@ -252,7 +252,7 @@ const renderRules = (textLimit?: number): RenderRules => ({
       onPress={() => openUrl(node.attributes.href as string, onLinkPress)}>
       {children}
     </Text>
-  )) as any,
+  )) as any, // RenderFunction signature allows variadic args
   blocklink: ((node: ASTNode, children: ReactNode, _parent: ASTNode[], styles: StylesType, onLinkPress?: (url: string) => boolean | void) => (
     <TouchableWithoutFeedback
       key={node.key}
@@ -260,7 +260,7 @@ const renderRules = (textLimit?: number): RenderRules => ({
       style={styles.blocklink}>
       <View style={styles.image}>{children}</View>
     </TouchableWithoutFeedback>
-  )) as any,
+  )) as any, // RenderFunction signature allows variadic args
 
   // Images
   image: ((
@@ -286,7 +286,7 @@ const renderRules = (textLimit?: number): RenderRules => ({
     const imageProps = {
       indicator: true,
       key: node.key,
-      style: styles._VIEW_SAFE_image as any,
+      style: styles._VIEW_SAFE_image as any, // FitImage expects ImageStyle but we provide ViewStyle
       source: {
         uri: show === true ? (src || '') : `${defaultImageHandler}${src || ''}`,
       },
@@ -294,7 +294,7 @@ const renderRules = (textLimit?: number): RenderRules => ({
     };
 
     return <FitImage {...imageProps} />;
-  }) as any,
+  }) as any, // RenderFunction signature allows variadic args
 
   // Text Output
   text: ((node: ASTNode, _children: ReactNode, _parent: ASTNode[], styles: StylesType, inheritedStyles: TextStyle = {}, onLinkPress?: (url: string) => boolean | void) => {
@@ -320,7 +320,7 @@ const renderRules = (textLimit?: number): RenderRules => ({
         {node.content}
       </Text>
     );
-  }) as any,
+  }) as any, // RenderFunction signature allows variadic args
   textgroup: (node, children, _parent, styles) => (
     <Text key={node.key} style={styles.textgroup}>
       {children}

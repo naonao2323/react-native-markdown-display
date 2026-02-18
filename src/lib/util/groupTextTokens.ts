@@ -9,12 +9,14 @@ export default function groupTextTokens(tokens: MarkdownItToken[]): MarkdownItTo
   tokens.forEach(token => {
     if (!token.block && !hasGroup) {
       hasGroup = true;
+      // Custom Token class doesn't fully match MarkdownItToken interface
       result.push(new Token('textgroup', 1) as any as MarkdownItToken);
       result.push(token);
     } else if (!token.block && hasGroup) {
       result.push(token);
     } else if (token.block && hasGroup) {
       hasGroup = false;
+      // Custom Token class doesn't fully match MarkdownItToken interface
       result.push(new Token('textgroup', -1) as any as MarkdownItToken);
       result.push(token);
     } else {

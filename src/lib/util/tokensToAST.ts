@@ -19,6 +19,9 @@ function createNode(token: Token, tokenIndex: number): ASTNode {
   return {
     type,
     sourceType: token.type,
+    sourceInfo: token.info,
+    sourceMeta: token.meta,
+    block: token.block,
     key: getUniqueID() + '_' + type,
     content,
     tokenIndex,

@@ -5,6 +5,9 @@ import { StyleProp, TextStyle, ViewStyle } from 'react-native';
 export interface ASTNode {
   type: string;
   sourceType: string;
+  sourceInfo?: string;
+  sourceMeta?: unknown;
+  block?: boolean;
   key: string;
   content: string;
   tokenIndex: number;

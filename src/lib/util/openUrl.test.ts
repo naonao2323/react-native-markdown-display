@@ -9,8 +9,8 @@ describe('openUrl', () => {
     jest.clearAllMocks();
   });
 
-  describe('正常系: コールバックなし', () => {
-    it('URLが与えられた時、Linking.openURLを呼ぶこと', () => {
+  describe('Happy path: No callback', () => {
+    it('should call Linking.openURL when URL is provided', () => {
       // Arrange
       const url = 'https://example.com';
       
@@ -23,8 +23,8 @@ describe('openUrl', () => {
     });
   });
 
-  describe('境界値: nullとundefined', () => {
-    it('URLがnullの時、Linking.openURLを呼ばないこと', () => {
+  describe('Edge case: null and undefined', () => {
+    it('should not call Linking.openURL when URL is null', () => {
       // Arrange
       const url = null;
       
@@ -35,7 +35,7 @@ describe('openUrl', () => {
       expect(Linking.openURL).not.toHaveBeenCalled();
     });
 
-    it('URLがundefinedの時、Linking.openURLを呼ばないこと', () => {
+    it('should not call Linking.openURL when URL is undefined', () => {
       // Arrange
       const url = undefined;
       
@@ -46,7 +46,7 @@ describe('openUrl', () => {
       expect(Linking.openURL).not.toHaveBeenCalled();
     });
 
-    it('URLが空文字列の時、Linking.openURLを呼ばないこと', () => {
+    it('should not call Linking.openURL when URL is empty string', () => {
       // Arrange
       const url = '';
       
@@ -58,26 +58,11 @@ describe('openUrl', () => {
     });
   });
 
-  describe('正常系: コールバックあり - trueを返す', () => {
-    it('コールバックがtrueを返す時、URLを開くこと', () => {
+  describe('Happy path: Callback returns true (handled)', () => {
+    it('should NOT open URL when callback returns true (callback handled it)', () => {
       // Arrange
       const url = 'https://example.com';
       const callback = jest.fn(() => true);
-      
-      // Act
-      openUrl(url, callback);
-      
-      // Assert
-      expect(callback).toHaveBeenCalledWith(url);
-      expect(Linking.openURL).toHaveBeenCalledWith(url);
-    });
-  });
-
-  describe('正常系: コールバックあり - falseを返す', () => {
-    it('コールバックがfalseを返す時、URLを開かないこと', () => {
-      // Arrange
-      const url = 'https://example.com';
-      const callback = jest.fn(() => false);
       
       // Act
       openUrl(url, callback);
@@ -88,8 +73,23 @@ describe('openUrl', () => {
     });
   });
 
-  describe('異常系: コールバックが不正な値を返す', () => {
-    it('コールバックが文字列を返す時、URLを開かないこと', () => {
+  describe('Happy path: Callback returns false (not handled)', () => {
+    it('should open URL when callback returns false (callback did not handle)', () => {
+      // Arrange
+      const url = 'https://example.com';
+      const callback = jest.fn(() => false);
+      
+      // Act
+      openUrl(url, callback);
+      
+      // Assert
+      expect(callback).toHaveBeenCalledWith(url);
+      expect(Linking.openURL).toHaveBeenCalledWith(url);
+    });
+  });
+
+  describe('Edge case: Callback returns non-boolean (treated as falsy)', () => {
+    it('should NOT open URL when callback returns string (truthy value treated as handled)', () => {
       // Arrange
       const url = 'https://example.com';
       const callback = jest.fn(() => 'string');
@@ -102,7 +102,7 @@ describe('openUrl', () => {
       expect(Linking.openURL).not.toHaveBeenCalled();
     });
 
-    it('コールバックが数値を返す時、URLを開かないこと', () => {
+    it('should NOT open URL when callback returns number (truthy value treated as handled)', () => {
       // Arrange
       const url = 'https://example.com';
       const callback = jest.fn(() => 1);
@@ -115,7 +115,7 @@ describe('openUrl', () => {
       expect(Linking.openURL).not.toHaveBeenCalled();
     });
 
-    it('コールバックがオブジェクトを返す時、URLを開かないこと', () => {
+    it('should NOT open URL when callback returns object (truthy value treated as handled)', () => {
       // Arrange
       const url = 'https://example.com';
       const callback = jest.fn(() => ({}));
@@ -129,8 +129,8 @@ describe('openUrl', () => {
     });
   });
 
-  describe('プロパティベーステスト', () => {
-    it('任意のURLで最大1回しかopenURLが呼ばれないこと', () => {
+  describe('Property-based tests', () => {
+    it('should call openURL at most once for any URL', () => {
       fc.assert(
         fc.property(fc.webUrl(), (url) => {
           // Arrange
@@ -146,22 +146,24 @@ describe('openUrl', () => {
       );
     });
 
-    it('コールバックの真偽値によって動作が決まること', () => {
+    it('Callback boolean determines behavior: true=handled (no open), false=not handled (open)', () => {
       fc.assert(
         fc.property(
           fc.webUrl(),
           fc.boolean(),
-          (url, shouldOpen) => {
+          (url, handled) => {
             // Arrange
             Linking.openURL.mockClear();
-            const callback = () => shouldOpen;
+            const callback = () => handled;
             
             // Act
             openUrl(url, callback);
             
             // Assert
             const callCount = Linking.openURL.mock.calls.length;
-            return shouldOpen ? callCount === 1 : callCount === 0;
+            // If callback returned true (handled), should NOT open (callCount === 0)
+            // If callback returned false (not handled), should open (callCount === 1)
+            return handled ? callCount === 0 : callCount === 1;
           }
         ),
         { numRuns: 50 }

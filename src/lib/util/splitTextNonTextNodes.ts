@@ -10,7 +10,7 @@ export default function splitTextNonTextNodes(children: ReactNode[]): SplitResul
     (acc, curr) => {
       if (curr && typeof curr === 'object' && 'type' in curr && 
           curr.type && typeof curr.type === 'object' && 'displayName' in curr.type &&
-          (curr.type as any).displayName === 'Text') {
+          (curr.type as any).displayName === 'Text') { // React component types don't expose displayName in type system
         acc.textNodes.push(curr);
       } else {
         acc.nonTextNodes.push(curr);

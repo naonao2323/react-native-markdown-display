@@ -18,7 +18,7 @@ import blockPlugin from './lib/plugin/blockPlugin';
 import removeTextStyleProps from './lib/util/removeTextStyleProps';
 import { styles } from './lib/styles';
 import { stringToTokens } from './lib/util/stringToTokens';
-import { MarkdownProps, StylesType } from './types';
+import { ASTNode, MarkdownProps, RenderRules, StylesType } from './types';
 
 export {
   getUniqueID,
@@ -67,12 +67,16 @@ const getStyle = (mergeStyle: boolean, style: StylesType | null): StylesType => 
     useStyles['_VIEW_SAFE_' + value] = removeTextStyleProps(styleValue || {});
   });
 
-  return StyleSheet.create(useStyles as any) as StylesType;
+  return StyleSheet.create(useStyles as any) as StylesType; // StyleSheet.create doesn't preserve custom style keys
+};
+
+type RendererLike = {
+  render: (nodes: readonly ASTNode[]) => ReactNode;
 };
 
 const getRenderer = (
-  renderer: AstRenderer | ((nodes: readonly import('./types').ASTNode[]) => ReactNode) | null,
-  rules: import('./types').RenderRules | null,
+  renderer: AstRenderer | ((nodes: readonly ASTNode[]) => ReactNode) | null,
+  rules: RenderRules | null,
   style: StylesType | null,
   mergeStyle: boolean,
   onLinkPress?: (url: string) => boolean | void,
@@ -82,7 +86,7 @@ const getRenderer = (
   defaultImageHandler?: string,
   debugPrintTree?: boolean,
   textLimit?: number,
-): AstRenderer => {
+): RendererLike => {
   if (renderer && rules) {
     console.warn(
       'react-native-markdown-display you are using renderer and rules at the same time. This is not possible, props.rules is ignored',
@@ -99,12 +103,8 @@ const getRenderer = (
   if (renderer) {
     if (renderer instanceof AstRenderer) {
       return renderer;
-    } else {
-      // Function renderers are not supported in TypeScript mode
-      throw new Error(
-        'Function renderers are not supported in TypeScript mode. Please use AstRenderer.',
-      );
     }
+    return { render: renderer };
   }
   
   const useStyles = getStyle(mergeStyle, style);
