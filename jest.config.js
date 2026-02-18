@@ -18,7 +18,7 @@ module.exports = {
     '^.+\\.(js|jsx)$': 'babel-jest',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|react-native-fit-image)/)'
+    'node_modules/(?!(react-native|@react-native)/)'
   ],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx,js,jsx}',

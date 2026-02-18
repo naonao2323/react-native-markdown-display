@@ -1,19 +1,20 @@
 import React, { ReactNode } from 'react';
 import {
   Text,
-  TouchableWithoutFeedback,
+  Pressable,
   View,
   Platform,
   StyleSheet,
   TextStyle,
+  Image,
+  ImageStyle,
 } from 'react-native';
-import FitImage from 'react-native-fit-image';
 
 import openUrl from './util/openUrl';
 import hasParents from './util/hasParents';
 
 import textStyleProps from './data/textStyleProps';
-import { RenderRules, ASTNode, StylesType } from '../types';
+import { RenderRules, ASTNode, StylesType, RenderFunction } from '../types';
 
 const renderRules = (textLimit?: number): RenderRules => ({
   // when unknown elements are introduced, so it wont break
@@ -169,14 +170,14 @@ const renderRules = (textLimit?: number): RenderRules => ({
         {children}
       </View>
     );
-  }) as any, // RenderFunction signature allows variadic args - cast needed for different arg counts
+  }) as RenderFunction,
 
   // Code
   code_inline: ((node: ASTNode, _children: ReactNode, _parent: ASTNode[], styles: StylesType, inheritedStyles: TextStyle = {}) => (
     <Text key={node.key} style={[inheritedStyles, styles.code_inline]}>
       {node.content}
     </Text>
-  )) as any, // RenderFunction signature allows variadic args
+  )) as RenderFunction,
   code_block: ((node: ASTNode, _children: ReactNode, _parent: ASTNode[], styles: StylesType, inheritedStyles: TextStyle = {}) => {
     // we trim new lines off the end of code blocks because the parser sends an extra one.
     let {content} = node;
@@ -193,7 +194,7 @@ const renderRules = (textLimit?: number): RenderRules => ({
         {content}
       </Text>
     );
-  }) as any, // RenderFunction signature allows variadic args
+  }) as RenderFunction,
   fence: ((node: ASTNode, _children: ReactNode, _parent: ASTNode[], styles: StylesType, inheritedStyles: TextStyle = {}) => {
     // we trim new lines off the end of code blocks because the parser sends an extra one.
     let {content} = node;
@@ -210,7 +211,7 @@ const renderRules = (textLimit?: number): RenderRules => ({
         {content}
       </Text>
     );
-  }) as any, // RenderFunction signature allows variadic args
+  }) as RenderFunction,
 
   // Tables
   table: (node, children, _parent, styles) => (
@@ -252,15 +253,15 @@ const renderRules = (textLimit?: number): RenderRules => ({
       onPress={() => openUrl(node.attributes.href as string, onLinkPress)}>
       {children}
     </Text>
-  )) as any, // RenderFunction signature allows variadic args
+  )) as RenderFunction,
   blocklink: ((node: ASTNode, children: ReactNode, _parent: ASTNode[], styles: StylesType, onLinkPress?: (url: string) => boolean | void) => (
-    <TouchableWithoutFeedback
+    <Pressable
       key={node.key}
       onPress={() => openUrl(node.attributes.href as string, onLinkPress)}
       style={styles.blocklink}>
       <View style={styles.image}>{children}</View>
-    </TouchableWithoutFeedback>
-  )) as any, // RenderFunction signature allows variadic args
+    </Pressable>
+  )) as RenderFunction,
 
   // Images
   image: ((
@@ -283,18 +284,18 @@ const renderRules = (textLimit?: number): RenderRules => ({
       return null;
     }
 
-    const imageProps = {
-      indicator: true,
-      key: node.key,
-      style: styles._VIEW_SAFE_image as any, // FitImage expects ImageStyle but we provide ViewStyle
-      source: {
-        uri: show === true ? (src || '') : `${defaultImageHandler}${src || ''}`,
-      },
-      ...(alt ? { accessible: true, accessibilityLabel: alt } : {}),
-    };
-
-    return <FitImage {...imageProps} />;
-  }) as any, // RenderFunction signature allows variadic args
+    return (
+      <Image
+        key={node.key}
+        style={styles._VIEW_SAFE_image as ImageStyle}
+        source={{
+          uri: show === true ? (src || '') : `${defaultImageHandler}${src || ''}`,
+        }}
+        resizeMode="contain"
+        {...(alt ? { accessible: true, accessibilityLabel: alt } : {})}
+      />
+    );
+  }) as RenderFunction,
 
   // Text Output
   text: ((node: ASTNode, _children: ReactNode, _parent: ASTNode[], styles: StylesType, inheritedStyles: TextStyle = {}, onLinkPress?: (url: string) => boolean | void) => {
@@ -320,7 +321,7 @@ const renderRules = (textLimit?: number): RenderRules => ({
         {node.content}
       </Text>
     );
-  }) as any, // RenderFunction signature allows variadic args
+  }) as RenderFunction,
   textgroup: (node, children, _parent, styles) => (
     <Text key={node.key} style={styles.textgroup}>
       {children}

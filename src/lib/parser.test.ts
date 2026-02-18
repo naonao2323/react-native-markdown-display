@@ -55,7 +55,7 @@ describe('parser', () => {
         try {
           parser(markdown, mockRenderer, md);
           return true;
-        } catch (e) {
+        } catch {
           return false;
         }
       }),
@@ -83,7 +83,7 @@ describe('parser', () => {
           mockRenderer.mockClear();
           parser(markdown, mockRenderer, md);
           return mockRenderer.mock.calls.length > 0;
-        } catch (e) {
+        } catch {
           return false;
         }
       }),
