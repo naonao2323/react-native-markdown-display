@@ -3,31 +3,31 @@ import getTokenTypeByToken from './getTokenTypeByToken';
 import flattenInlineTokens from './flattenInlineTokens';
 import renderInlineAsText from './renderInlineAsText';
 
-export function cleanupTokens(tokens: Token[]): Token[] {
-  let cleanedTokens = flattenInlineTokens(tokens);
-  cleanedTokens.forEach(token => {
-    token.type = getTokenTypeByToken(token);
+// Exported for testing purposes; treated as a private implementation detail.
+export function normalizeToken(token: Token): void {
+  token.type = getTokenTypeByToken(token);
 
-    // set image and hardbreak to block elements
-    if (token.type === 'image' || token.type === 'hardbreak') {
-      token.block = true;
+  // set image and hardbreak to block elements
+  if (token.type === 'image' || token.type === 'hardbreak') {
+    token.block = true;
+  }
+
+  // Set img alt text
+  if (token.type === 'image' && token.children) {
+    const altIndex = token.attrIndex('alt');
+    if (altIndex >= 0 && token.attrs && token.attrs[altIndex]) {
+      token.attrs[altIndex][1] = renderInlineAsText(token.children);
     }
+  }
+}
 
-    // Set img alt text
-    if (token.type === 'image' && token.children) {
-      const altIndex = token.attrIndex('alt');
-      if (altIndex >= 0 && token.attrs && token.attrs[altIndex]) {
-        token.attrs[altIndex][1] = renderInlineAsText(token.children);
-      }
-    }
-  })
-
-  /**
-   * changing a link token to a blocklink to fix issue where link tokens with
-   * nested non text tokens breaks component
-   */
+// Exported for testing purposes; treated as a private implementation detail.
+// Converts link tokens that contain block-level children (e.g. images) into
+// blocklink tokens so they can be wrapped in TouchableWithoutFeedback instead
+// of Text, avoiding a View-inside-Text crash in React Native.
+export function convertToBlockLinks(tokens: Token[]): Token[] {
   const stack: Token[] = [];
-  cleanedTokens = cleanedTokens.reduce((acc: Token[], token) => {
+  return tokens.reduce((acc: Token[], token) => {
     if (token.type === 'link' && token.nesting === 1) {
       stack.push(token);
     } else if (
@@ -59,6 +59,10 @@ export function cleanupTokens(tokens: Token[]): Token[] {
 
     return acc;
   }, []);
+}
 
-  return cleanedTokens;
+export function cleanupTokens(tokens: Token[]): Token[] {
+  const cleanedTokens = flattenInlineTokens(tokens);
+  cleanedTokens.forEach(normalizeToken);
+  return convertToBlockLinks(cleanedTokens);
 }
