@@ -7,8 +7,11 @@ on:
 
 jobs:
   validate:
-    name: Validate
+    name: Validate (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -16,7 +19,7 @@ jobs:
       - name: Setup Node.js and Install
         uses: ./.github/actions/setup
         with:
-          node-version: '22'
+          node-version: ${{ matrix.node-version }}
 
       - name: Run lint
         run: npm run lint
@@ -40,6 +43,7 @@ jobs:
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
+          # registry and access are configured in publishConfig in package.json
           cache: 'npm'
 
       - name: Install dependencies
@@ -78,7 +82,7 @@ jobs:
             
             ### Installation
             ```bash
-            npm install @jeremybarbet/react-native-markdown-display@${{ steps.version.outputs.version }}
+            npm install @naonao2323/react-native-markdown-display@${{ steps.version.outputs.version }}
             ```
           draft: false
           prerelease: false
